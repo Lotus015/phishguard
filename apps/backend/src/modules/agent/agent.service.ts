@@ -28,7 +28,7 @@ export class AgentService {
     messages: Message[],
     task: string,
     structuredOutput: z.ZodObject<T>,
-    model: string = 'gpt-4.1-mini',
+    model: string = 'gpt-5-mini',
   ): Promise<z.infer<z.ZodObject<T>>> {
     const request: MozaikRequest = {
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -38,7 +38,8 @@ export class AgentService {
     };
 
     const agent = new MozaikAgent(request);
-    return agent.act();
+    const response = await agent.act();
+    return response.data;
   }
 
   /**
@@ -47,7 +48,7 @@ export class AgentService {
   async generateResponse(
     messages: Message[],
     task: string,
-    model: string = 'gpt-4.1-mini',
+    model: string = 'gpt-5-mini',
   ): Promise<string> {
     const request: MozaikRequest = {
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -57,7 +58,7 @@ export class AgentService {
 
     const agent = new MozaikAgent(request);
     const response = await agent.act();
-    return response || 'No response generated';
+    return response.data || 'No response generated';
   }
 
   /**
@@ -75,7 +76,7 @@ export class AgentService {
     formattedMessages.push({ role: 'user', content: task });
 
     const stream = await this.openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
+      model: 'gpt-5-mini',
       messages: formattedMessages,
       stream: true,
     });

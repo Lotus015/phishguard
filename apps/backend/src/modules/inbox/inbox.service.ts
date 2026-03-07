@@ -14,8 +14,8 @@ const GeneratedEmailBatchSchema = z.object({
     z.object({
       fromName: z.string(),
       fromEmail: z.string(),
-      replyToName: z.string().optional(),
-      replyToEmail: z.string().optional(),
+      replyToName: z.string().nullable(),
+      replyToEmail: z.string().nullable(),
       toName: z.string(),
       toEmail: z.string(),
       subject: z.string(),
@@ -62,14 +62,22 @@ export class InboxService {
     ];
 
     console.log(`[INBOX] Generating ${config.emailCount} emails for session ${sessionId}`);
+    console.log(`[INBOX] Task:`, task.slice(0, 200));
 
     // Generate emails via Mozaik structured output
-    const result = await this.agentService.generateStructuredResponse(
-      messages,
-      task,
-      GeneratedEmailBatchSchema,
-      'gpt-4.1-mini',
-    );
+    let result;
+    try {
+      result = await this.agentService.generateStructuredResponse(
+        messages,
+        task,
+        GeneratedEmailBatchSchema,
+        'gpt-5-mini',
+      );
+      console.log(`[INBOX] Mozaik returned ${result.emails?.length ?? 0} emails`);
+    } catch (err) {
+      console.error(`[INBOX] Mozaik error:`, err);
+      throw err;
+    }
 
     // Save emails to database
     const generatedEmails: GeneratedEmail[] = [];
