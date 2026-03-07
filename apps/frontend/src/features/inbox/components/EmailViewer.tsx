@@ -1,10 +1,10 @@
-import { ShieldAlert, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Star, Archive, Trash2, Mail, MoreVertical, Printer, ExternalLink, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInbox } from '../context/InboxContext';
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-US', {
-    weekday: 'short',
+  const date = new Date(dateStr);
+  return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -12,6 +12,20 @@ function formatDate(dateStr: string): string {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+function getAvatarColor(name: string): string {
+  const colors = [
+    'bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-orange-500',
+    'bg-pink-600', 'bg-teal-600', 'bg-indigo-600', 'bg-amber-600',
+  ];
+  let hash = 0;
+  for (const ch of name) hash = ch.charCodeAt(0) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function getInitials(name: string): string {
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 1);
 }
 
 export function EmailViewer(): React.JSX.Element | null {
@@ -24,88 +38,128 @@ export function EmailViewer(): React.JSX.Element | null {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-border px-6 py-4">
+      {/* Top toolbar */}
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1">
         <button
           onClick={() => selectEmail(null)}
-          className="mb-3 flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700 md:hidden"
+          className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100"
+          title="Back to Inbox"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Archive">
+          <Archive className="h-5 w-5" />
+        </button>
+        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Delete">
+          <Trash2 className="h-5 w-5" />
+        </button>
+        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Mark as unread">
+          <Mail className="h-5 w-5" />
         </button>
 
-        <h1 className="text-xl font-normal text-neutral-900">{selectedEmail.subject}</h1>
+        <div className="flex-1" />
 
-        <div className="mt-3 flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
-            {selectedEmail.from.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Print">
+          <Printer className="h-5 w-5" />
+        </button>
+        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Open in new window">
+          <ExternalLink className="h-5 w-5" />
+        </button>
+        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="More">
+          <MoreVertical className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Email content */}
+      <div className="flex-1 overflow-y-auto px-16 py-4">
+        {/* Subject */}
+        <div className="flex items-start justify-between">
+          <h1 className="text-2xl font-normal text-neutral-900">{selectedEmail.subject}</h1>
+          <button className="ml-4 shrink-0 text-neutral-300 hover:text-amber-400">
+            <Star className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Sender info */}
+        <div className="mt-6 flex items-start gap-3">
+          <div className={cn(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-medium text-white',
+            getAvatarColor(selectedEmail.from.name),
+          )}>
+            {getInitials(selectedEmail.from.name)}
           </div>
+
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-medium text-neutral-900">{selectedEmail.from.name}</span>
-              <span className="text-sm text-neutral-400">&lt;{selectedEmail.from.email}&gt;</span>
+              <span className="text-sm text-neutral-500">&lt;{selectedEmail.from.email}&gt;</span>
             </div>
-            <div className="text-sm text-neutral-500">
-              to {selectedEmail.to.name} &lt;{selectedEmail.to.email}&gt;
+            <div className="flex items-center gap-1 text-sm text-neutral-500">
+              <span>to me</span>
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z" /></svg>
             </div>
+
+            {/* Reply-To warning */}
             {selectedEmail.replyTo && (
-              <div className="text-sm text-amber-600">
+              <div className="mt-1 flex items-center gap-1 text-sm text-amber-600">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
                 Reply-To: {selectedEmail.replyTo.name} &lt;{selectedEmail.replyTo.email}&gt;
               </div>
             )}
           </div>
-          <span className="shrink-0 text-xs text-neutral-400">
+
+          <span className="shrink-0 text-xs text-neutral-500">
             {formatDate(selectedEmail.receivedAt)}
           </span>
         </div>
-      </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <div
-          className="prose prose-neutral max-w-none"
-          dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
-        />
-      </div>
-
-      {/* Action buttons */}
-      {!isSubmitted && (
-        <div className="flex items-center gap-3 border-t border-border px-6 py-4">
-          <button
-            onClick={() =>
-              hasDecision && decision === true
-                ? clearDecision(selectedEmail.id)
-                : markEmail(selectedEmail.id, true)
-            }
-            className={cn(
-              'flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors',
-              hasDecision && decision === true
-                ? 'bg-red-500 text-white'
-                : 'border border-red-200 text-red-600 hover:bg-red-50',
-            )}
-          >
-            <ShieldAlert className="h-4 w-4" />
-            Report as Phishing
-          </button>
-
-          <button
-            onClick={() =>
-              hasDecision && decision === false
-                ? clearDecision(selectedEmail.id)
-                : markEmail(selectedEmail.id, false)
-            }
-            className={cn(
-              'flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors',
-              hasDecision && decision === false
-                ? 'bg-green-500 text-white'
-                : 'border border-green-200 text-green-600 hover:bg-green-50',
-            )}
-          >
-            <ShieldCheck className="h-4 w-4" />
-            Mark as Safe
-          </button>
+        {/* Email body */}
+        <div className="mt-6 pl-[52px]">
+          <div
+            className="text-sm leading-relaxed text-neutral-800"
+            dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
+          />
         </div>
-      )}
+
+        {/* PhishGuard action buttons */}
+        {!isSubmitted && (
+          <div className="mt-8 flex items-center gap-3 border-t border-border pl-[52px] pt-6">
+            <button
+              onClick={() =>
+                hasDecision && decision === true
+                  ? clearDecision(selectedEmail.id)
+                  : markEmail(selectedEmail.id, true)
+              }
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all',
+                hasDecision && decision === true
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'border border-neutral-300 text-neutral-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700',
+              )}
+            >
+              <ShieldAlert className="h-4 w-4" />
+              Report as Phishing
+            </button>
+
+            <button
+              onClick={() =>
+                hasDecision && decision === false
+                  ? clearDecision(selectedEmail.id)
+                  : markEmail(selectedEmail.id, false)
+              }
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all',
+                hasDecision && decision === false
+                  ? 'bg-green-600 text-white shadow-sm'
+                  : 'border border-neutral-300 text-neutral-700 hover:border-green-300 hover:bg-green-50 hover:text-green-700',
+              )}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Mark as Safe
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,8 @@
+import { useState } from 'react';
+import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
+import { CategoryTabs } from './CategoryTabs';
 import { EmailList } from './EmailList';
 import { EmailViewer } from './EmailViewer';
 import { GenerateButton } from './GenerateButton';
@@ -7,34 +10,37 @@ import { useInbox } from '../context/InboxContext';
 
 export function InboxLayout(): React.JSX.Element {
   const { selectedEmailId } = useInbox();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen bg-white">
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="flex h-screen flex-col bg-white">
+      {/* Top header */}
+      <Header
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
+      />
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Toolbar />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar collapsed={sidebarCollapsed} />
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Email list — hide on mobile when viewing email */}
-          <div className={`w-full border-r border-border md:w-96 ${selectedEmailId ? 'hidden md:flex md:flex-col' : 'flex flex-col'}`}>
-            <EmailList />
-          </div>
-
-          {/* Email viewer */}
+        {/* Main content area */}
+        <div className="flex flex-1 flex-col overflow-hidden rounded-tl-2xl bg-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)]">
           {selectedEmailId ? (
+            /* Email viewer - full width */
             <EmailViewer />
           ) : (
-            <div className="hidden flex-1 items-center justify-center text-neutral-300 md:flex">
-              <p className="text-lg">Select an email to read</p>
-            </div>
+            /* Inbox list */
+            <>
+              <Toolbar />
+              <CategoryTabs />
+              <EmailList />
+            </>
           )}
         </div>
       </div>
 
-      <GenerateButton />
+      {!selectedEmailId && <GenerateButton />}
     </div>
   );
 }

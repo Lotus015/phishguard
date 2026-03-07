@@ -1,36 +1,23 @@
-import { ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Star, Archive, Trash2, Mail, Clock, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GeneratedEmail } from '@phishguard/shared';
 import { useInbox } from '../context/InboxContext';
 
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function getAvatarColor(name: string): string {
-  const colors = [
-    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500',
-    'bg-pink-500', 'bg-teal-500', 'bg-indigo-500', 'bg-amber-500',
-  ];
-  let hash = 0;
-  for (const ch of name) hash = ch.charCodeAt(0) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
+  if (isToday) {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function stripHtml(html: string): string {
   const div = document.createElement('div');
   div.innerHTML = html;
-  return div.textContent?.trim() ?? '';
+  return div.textContent?.trim().replace(/\s+/g, ' ') ?? '';
 }
 
 interface EmailRowProps {
@@ -41,43 +28,40 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
   const { selectEmail, decisions } = useInbox();
   const decision = decisions[email.id];
   const hasDecision = decision !== undefined;
+  const isUnread = !hasDecision;
+
+  const snippet = stripHtml(email.bodyHtml).slice(0, 120);
 
   return (
-    <button
+    <div
       onClick={() => selectEmail(email.id)}
       className={cn(
-        'flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition-colors hover:bg-neutral-50',
-        !hasDecision && 'bg-white font-semibold',
-        hasDecision && 'bg-neutral-50/50',
+        'group flex h-10 cursor-pointer items-center border-b border-neutral-100 pl-2 pr-4 text-sm transition-colors',
+        isUnread ? 'bg-white font-medium' : 'bg-[#f2f6fc]/50',
+        'hover:shadow-[inset_1px_0_0_#dadce0,inset_-1px_0_0_#dadce0,0_1px_2px_0_rgba(60,64,67,.3),0_1px_3px_1px_rgba(60,64,67,.15)]',
+        'hover:z-10 hover:relative',
       )}
     >
-      {/* Avatar */}
-      <div
-        className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white',
-          getAvatarColor(email.from.name),
-        )}
+      {/* Checkbox */}
+      <div className="flex w-10 shrink-0 items-center justify-center">
+        <input
+          type="checkbox"
+          className="h-[18px] w-[18px] cursor-pointer rounded border-neutral-300 text-neutral-600"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
+      {/* Star */}
+      <button
+        className="mr-2 flex shrink-0 items-center text-neutral-300 hover:text-amber-400"
+        onClick={(e) => e.stopPropagation()}
       >
-        {getInitials(email.from.name)}
-      </div>
+        <Star className="h-5 w-5" />
+      </button>
 
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className={cn('truncate text-sm', !hasDecision ? 'font-semibold text-neutral-900' : 'text-neutral-700')}>
-            {email.from.name}
-          </span>
-          <span className="shrink-0 text-xs text-neutral-400">
-            {formatTime(email.receivedAt)}
-          </span>
-        </div>
-        <div className="truncate text-sm text-neutral-800">{email.subject}</div>
-        <div className="truncate text-xs text-neutral-400">{stripHtml(email.bodyHtml).slice(0, 80)}</div>
-      </div>
-
-      {/* Decision badge */}
+      {/* Decision indicator (in place of importance marker) */}
       {hasDecision && (
-        <div className="shrink-0">
+        <div className="mr-2 shrink-0">
           {decision ? (
             <ShieldAlert className="h-4 w-4 text-red-500" />
           ) : (
@@ -85,6 +69,67 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
           )}
         </div>
       )}
-    </button>
+
+      {/* Sender */}
+      <div className={cn(
+        'w-[200px] shrink-0 truncate pr-4',
+        isUnread ? 'font-bold text-neutral-900' : 'text-neutral-700',
+      )}>
+        {email.from.name}
+      </div>
+
+      {/* Subject + snippet */}
+      <div className="flex min-w-0 flex-1 items-baseline truncate">
+        <span className={cn(
+          'shrink-0',
+          isUnread ? 'font-bold text-neutral-900' : 'text-neutral-700',
+        )}>
+          {email.subject}
+        </span>
+        <span className="ml-1 truncate text-neutral-500">
+          {' '}- {snippet}
+        </span>
+      </div>
+
+      {/* Hover actions (shown on hover, hide time) */}
+      <div className="ml-2 hidden shrink-0 items-center gap-0.5 group-hover:flex">
+        <button
+          className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-200"
+          onClick={(e) => e.stopPropagation()}
+          title="Archive"
+        >
+          <Archive className="h-4 w-4" />
+        </button>
+        <button
+          className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-200"
+          onClick={(e) => e.stopPropagation()}
+          title="Delete"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+        <button
+          className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-200"
+          onClick={(e) => e.stopPropagation()}
+          title="Mark as read"
+        >
+          <Mail className="h-4 w-4" />
+        </button>
+        <button
+          className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-200"
+          onClick={(e) => e.stopPropagation()}
+          title="Snooze"
+        >
+          <Clock className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Time (hidden on hover) */}
+      <div className={cn(
+        'ml-2 w-[52px] shrink-0 text-right text-xs group-hover:hidden',
+        isUnread ? 'font-bold text-neutral-900' : 'text-neutral-500',
+      )}>
+        {formatTime(email.receivedAt)}
+      </div>
+    </div>
   );
 }
