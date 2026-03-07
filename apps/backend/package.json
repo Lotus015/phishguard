@@ -1,0 +1,48 @@
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no linter configured'",
+    "test": "echo 'no tests yet'",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.10",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.10",
+    "@nestjs/platform-express": "^11.1.10",
+    "@phishguard/shared": "workspace:*",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.45.1",
+    "express": "^4.21.2",
+    "openai": "^6.15.0",
+    "pg": "^8.13.1",
+    "postgres": "^3.4.7",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "uuid": "^11.0.5",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.31.8",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}
