@@ -2,7 +2,7 @@ import { RefreshCw, MoreVertical, ChevronLeft, ChevronRight, Square } from 'luci
 import { useInbox } from '../context/InboxContext';
 
 export function Toolbar(): React.JSX.Element {
-  const { decidedCount, emails, allDecided, isSubmitted, submitAnalysis } = useInbox();
+  const { decidedCount, emails, allDecided, isSubmitted, isSubmitting, submitAnalysis, analysisResult } = useInbox();
 
   return (
     <div className="flex items-center justify-between px-2 py-1">
@@ -21,11 +21,17 @@ export function Toolbar(): React.JSX.Element {
         {decidedCount > 0 && !isSubmitted && (
           <button
             onClick={submitAnalysis}
-            disabled={!allDecided}
+            disabled={!allDecided || isSubmitting}
             className="ml-2 rounded-full bg-[#1a73e8] px-4 py-1.5 text-xs font-medium text-white transition-opacity hover:bg-[#1557b0] disabled:opacity-50"
           >
-            Submit Analysis ({decidedCount}/{emails.length})
+            {isSubmitting ? 'Submitting...' : `Submit Analysis (${decidedCount}/${emails.length})`}
           </button>
+        )}
+
+        {isSubmitted && analysisResult && (
+          <div className="ml-2 flex items-center gap-2 rounded-full bg-green-50 px-4 py-1.5 text-xs font-medium text-green-700">
+            Score: {analysisResult.score}/{analysisResult.total} correct
+          </div>
         )}
       </div>
 

@@ -29,12 +29,15 @@ function getInitials(name: string): string {
 }
 
 export function EmailViewer(): React.JSX.Element | null {
-  const { selectedEmail, selectEmail, decisions, markEmail, clearDecision, isSubmitted } = useInbox();
+  const { selectedEmail, selectEmail, decisions, markEmail, clearDecision, isSubmitted, analysisResult } = useInbox();
 
   if (!selectedEmail) return null;
 
   const decision = decisions[selectedEmail.id];
   const hasDecision = decision !== undefined;
+  const verdict = isSubmitted && analysisResult
+    ? analysisResult.perEmail.find((v) => v.emailId === selectedEmail.id)
+    : null;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -157,6 +160,51 @@ export function EmailViewer(): React.JSX.Element | null {
               <ShieldCheck className="h-4 w-4" />
               Mark as Safe
             </button>
+          </div>
+        )}
+
+        {/* Verdict panel (after submission) */}
+        {verdict && (
+          <div className={cn(
+            'mt-8 rounded-lg border pl-[52px] pt-0',
+          )}>
+            <div className={cn(
+              'rounded-lg p-4',
+              verdict.correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50',
+            )}>
+              <div className="flex items-center gap-2">
+                {verdict.correct ? (
+                  <ShieldCheck className="h-5 w-5 text-green-600" />
+                ) : (
+                  <ShieldAlert className="h-5 w-5 text-red-600" />
+                )}
+                <span className={cn(
+                  'font-medium',
+                  verdict.correct ? 'text-green-800' : 'text-red-800',
+                )}>
+                  {verdict.correct ? 'Correct!' : 'Incorrect'}
+                </span>
+                <span className="text-sm text-neutral-600">
+                  — This email was {verdict.wasPhishing ? 'phishing' : 'legitimate'}
+                </span>
+              </div>
+
+              {verdict.indicators.length > 0 && (
+                <div className="mt-3">
+                  <p className="mb-2 text-sm font-medium text-neutral-700">Phishing Indicators:</p>
+                  <ul className="space-y-1.5">
+                    {verdict.indicators.map((ind, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-neutral-600">
+                        <span className="mt-0.5 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">
+                          {ind.type.replace(/_/g, ' ')}
+                        </span>
+                        <span>{ind.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthController } from './health.controller';
 import { AgentModule } from './modules/agent/agent.module';
 import { InboxModule } from './modules/inbox/inbox.module';
+import { AnalysisModule } from './modules/analysis/analysis.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { InboxModule } from './modules/inbox/inbox.module';
     DatabaseModule,
     AgentModule,
     InboxModule,
+    AnalysisModule,
   ],
   controllers: [HealthController],
 })

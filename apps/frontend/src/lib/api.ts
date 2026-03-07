@@ -1,4 +1,4 @@
-import type { CampaignConfig, GeneratedEmail } from '@phishguard/shared';
+import type { CampaignConfig, GeneratedEmail, AnalysisResult } from '@phishguard/shared';
 
 const API_BASE = '/api';
 
@@ -37,4 +37,10 @@ export const api = {
 
   getInbox: (sessionId: string): Promise<{ emails: GeneratedEmail[] }> =>
     request<{ emails: GeneratedEmail[] }>(`/inbox/${sessionId}`),
+
+  submitAnalysis: (sessionId: string, decisions: { emailId: string; markedAsPhishing: boolean }[]): Promise<AnalysisResult> =>
+    request<AnalysisResult>('/analysis/submit', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, decisions }),
+    }),
 };

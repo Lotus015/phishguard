@@ -1,4 +1,4 @@
-import { Star, Archive, Trash2, Mail, Clock, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Star, Archive, Trash2, Mail, Clock, ShieldAlert, ShieldCheck, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GeneratedEmail } from '@phishguard/shared';
 import { useInbox } from '../context/InboxContext';
@@ -25,10 +25,14 @@ interface EmailRowProps {
 }
 
 export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
-  const { selectEmail, decisions } = useInbox();
+  const { selectEmail, decisions, isSubmitted, analysisResult } = useInbox();
   const decision = decisions[email.id];
   const hasDecision = decision !== undefined;
   const isUnread = !hasDecision;
+
+  const verdict = isSubmitted && analysisResult
+    ? analysisResult.perEmail.find((v) => v.emailId === email.id)
+    : null;
 
   const snippet = stripHtml(email.bodyHtml).slice(0, 120);
 
@@ -59,8 +63,16 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
         <Star className="h-5 w-5" />
       </button>
 
-      {/* Decision indicator (in place of importance marker) */}
-      {hasDecision && (
+      {/* Decision indicator / verdict */}
+      {verdict ? (
+        <div className="mr-2 shrink-0">
+          {verdict.correct ? (
+            <Check className="h-4 w-4 text-green-600" />
+          ) : (
+            <X className="h-4 w-4 text-red-600" />
+          )}
+        </div>
+      ) : hasDecision ? (
         <div className="mr-2 shrink-0">
           {decision ? (
             <ShieldAlert className="h-4 w-4 text-red-500" />
@@ -68,7 +80,7 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
             <ShieldCheck className="h-4 w-4 text-green-500" />
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Sender */}
       <div className={cn(

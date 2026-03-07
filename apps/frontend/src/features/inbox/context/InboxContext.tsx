@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { GeneratedEmail, CampaignConfig } from '@phishguard/shared';
+import type { GeneratedEmail, CampaignConfig, AnalysisResult } from '@phishguard/shared';
 import { api } from '@/lib/api';
 
 interface InboxState {
@@ -9,8 +9,10 @@ interface InboxState {
   decisions: Record<string, boolean>;
   isSubmitted: boolean;
   isGenerating: boolean;
+  isSubmitting: boolean;
   showWizard: boolean;
   error: string | null;
+  analysisResult: AnalysisResult | null;
 }
 
 interface InboxContextValue extends InboxState {
@@ -18,7 +20,7 @@ interface InboxContextValue extends InboxState {
   selectEmail: (id: string | null) => void;
   markEmail: (emailId: string, asPhishing: boolean) => void;
   clearDecision: (emailId: string) => void;
-  submitAnalysis: () => void;
+  submitAnalysis: () => Promise<void>;
   generateCampaign: (config: CampaignConfig) => Promise<void>;
   openWizard: () => void;
   closeWizard: () => void;
@@ -36,8 +38,10 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
     decisions: {},
     isSubmitted: false,
     isGenerating: false,
+    isSubmitting: false,
     showWizard: false,
     error: null,
+    analysisResult: null,
   });
 
   const selectedEmail = state.emails.find((e) => e.id === state.selectedEmailId) ?? null;
@@ -61,9 +65,29 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
     });
   }, []);
 
-  const submitAnalysis = useCallback(() => {
-    setState((prev) => ({ ...prev, isSubmitted: true }));
-  }, []);
+  const submitAnalysis = useCallback(async () => {
+    if (!state.sessionId) return;
+    setState((prev) => ({ ...prev, isSubmitting: true }));
+    try {
+      const decisions = Object.entries(state.decisions).map(([emailId, markedAsPhishing]) => ({
+        emailId,
+        markedAsPhishing,
+      }));
+      const result = await api.submitAnalysis(state.sessionId, decisions);
+      setState((prev) => ({
+        ...prev,
+        isSubmitted: true,
+        isSubmitting: false,
+        analysisResult: result,
+      }));
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        isSubmitting: false,
+        error: err instanceof Error ? err.message : 'Failed to submit analysis',
+      }));
+    }
+  }, [state.sessionId, state.decisions]);
 
   const generateCampaign = useCallback(async (config: CampaignConfig) => {
     setState((prev) => ({ ...prev, isGenerating: true, error: null }));
@@ -78,6 +102,7 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
         isSubmitted: false,
         isGenerating: false,
         showWizard: false,
+        analysisResult: null,
       }));
     } catch (err) {
       setState((prev) => ({
