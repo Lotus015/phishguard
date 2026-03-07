@@ -1,3 +1,5 @@
+import type { CampaignConfig, GeneratedEmail } from '@phishguard/shared';
+
 const API_BASE = '/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -17,8 +19,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface GenerateCampaignResponse {
+  sessionId: string;
+  emails: GeneratedEmail[];
+}
+
 export const api = {
   get: <T>(path: string): Promise<T> => request<T>(path),
   post: <T>(path: string, body: unknown): Promise<T> =>
     request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
+
+  generateCampaign: (config: CampaignConfig): Promise<GenerateCampaignResponse> =>
+    request<GenerateCampaignResponse>('/inbox/generate', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    }),
+
+  getInbox: (sessionId: string): Promise<{ emails: GeneratedEmail[] }> =>
+    request<{ emails: GeneratedEmail[] }>(`/inbox/${sessionId}`),
 };

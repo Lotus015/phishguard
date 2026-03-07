@@ -1,12 +1,16 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { GeneratedEmail } from '@phishguard/shared';
-import { mockEmails } from '../mock-data';
+import type { GeneratedEmail, CampaignConfig } from '@phishguard/shared';
+import { api } from '@/lib/api';
 
 interface InboxState {
   emails: GeneratedEmail[];
+  sessionId: string | null;
   selectedEmailId: string | null;
-  decisions: Record<string, boolean>; // emailId -> markedAsPhishing
+  decisions: Record<string, boolean>;
   isSubmitted: boolean;
+  isGenerating: boolean;
+  showWizard: boolean;
+  error: string | null;
 }
 
 interface InboxContextValue extends InboxState {
@@ -15,6 +19,9 @@ interface InboxContextValue extends InboxState {
   markEmail: (emailId: string, asPhishing: boolean) => void;
   clearDecision: (emailId: string) => void;
   submitAnalysis: () => void;
+  generateCampaign: (config: CampaignConfig) => Promise<void>;
+  openWizard: () => void;
+  closeWizard: () => void;
   allDecided: boolean;
   decidedCount: number;
 }
@@ -23,10 +30,14 @@ const InboxContext = createContext<InboxContextValue | null>(null);
 
 export function InboxProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [state, setState] = useState<InboxState>({
-    emails: mockEmails,
+    emails: [],
+    sessionId: null,
     selectedEmailId: null,
     decisions: {},
     isSubmitted: false,
+    isGenerating: false,
+    showWizard: false,
+    error: null,
   });
 
   const selectedEmail = state.emails.find((e) => e.id === state.selectedEmailId) ?? null;
@@ -54,8 +65,39 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
     setState((prev) => ({ ...prev, isSubmitted: true }));
   }, []);
 
+  const generateCampaign = useCallback(async (config: CampaignConfig) => {
+    setState((prev) => ({ ...prev, isGenerating: true, error: null }));
+    try {
+      const result = await api.generateCampaign(config);
+      setState((prev) => ({
+        ...prev,
+        emails: result.emails,
+        sessionId: result.sessionId,
+        selectedEmailId: null,
+        decisions: {},
+        isSubmitted: false,
+        isGenerating: false,
+        showWizard: false,
+      }));
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        isGenerating: false,
+        error: err instanceof Error ? err.message : 'Failed to generate campaign',
+      }));
+    }
+  }, []);
+
+  const openWizard = useCallback(() => {
+    setState((prev) => ({ ...prev, showWizard: true }));
+  }, []);
+
+  const closeWizard = useCallback(() => {
+    setState((prev) => ({ ...prev, showWizard: false }));
+  }, []);
+
   const decidedCount = Object.keys(state.decisions).length;
-  const allDecided = decidedCount === state.emails.length;
+  const allDecided = state.emails.length > 0 && decidedCount === state.emails.length;
 
   return (
     <InboxContext.Provider
@@ -66,6 +108,9 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
         markEmail,
         clearDecision,
         submitAnalysis,
+        generateCampaign,
+        openWizard,
+        closeWizard,
         allDecided,
         decidedCount,
       }}
