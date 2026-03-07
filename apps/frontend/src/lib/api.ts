@@ -43,4 +43,36 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ sessionId, decisions }),
     }),
+
+  streamChat: async function* (sessionId: string, message: string): AsyncGenerator<string> {
+    const res = await fetch(`${API_BASE}/chat/${sessionId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!res.ok) throw new Error(`Chat request failed: ${res.status}`);
+    if (!res.body) throw new Error('No response body');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const event = JSON.parse(line.slice(6));
+        if (event.type === 'chunk') yield event.data;
+        if (event.type === 'done') return;
+        if (event.type === 'error') throw new Error(event.data);
+      }
+    }
+  },
 };

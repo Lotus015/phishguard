@@ -5,6 +5,7 @@ import { HealthController } from './health.controller';
 import { AgentModule } from './modules/agent/agent.module';
 import { InboxModule } from './modules/inbox/inbox.module';
 import { AnalysisModule } from './modules/analysis/analysis.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AnalysisModule } from './modules/analysis/analysis.module';
     AgentModule,
     InboxModule,
     AnalysisModule,
+    ChatModule,
   ],
   controllers: [HealthController],
 })

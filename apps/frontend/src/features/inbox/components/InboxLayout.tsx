@@ -7,6 +7,7 @@ import { EmailList } from './EmailList';
 import { EmailViewer } from './EmailViewer';
 import { GenerateButton } from './GenerateButton';
 import { CampaignSetupWizard } from '../../campaign/CampaignSetupWizard';
+import { DebriefPanel } from '../../debrief/DebriefPanel';
 import { useInbox } from '../context/InboxContext';
 
 export function InboxLayout(): React.JSX.Element {
@@ -39,7 +40,8 @@ export function InboxLayout(): React.JSX.Element {
         </div>
       </div>
 
-      {!selectedEmailId && <GenerateButton />}
+      {!selectedEmailId && !isGenerating && <GenerateButton />}
+      <DebriefPanel />
 
       <CampaignSetupWizard
         open={showWizard}
