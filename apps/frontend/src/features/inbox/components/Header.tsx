@@ -26,7 +26,7 @@ export function Header({ onToggleSidebar }: HeaderProps): React.JSX.Element {
       </div>
 
       {/* Center: search bar */}
-      <div className="mx-4 flex max-w-[720px] flex-1">
+      <div className="mx-4 flex w-full max-w-[720px]">
         <div className="flex w-full items-center rounded-full bg-[#eaf1fb] px-4 py-2.5 transition-colors focus-within:bg-white focus-within:shadow-md">
           <Search className="mr-3 h-5 w-5 text-neutral-500" />
           <input
@@ -42,8 +42,11 @@ export function Header({ onToggleSidebar }: HeaderProps): React.JSX.Element {
         </div>
       </div>
 
+      {/* Spacer pushes icons to the right */}
+      <div className="flex-1" />
+
       {/* Right: action icons + profile */}
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100">
           <HelpCircle className="h-5 w-5" />
         </button>
