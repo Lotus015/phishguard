@@ -23,6 +23,7 @@
     "@nestjs/core": "^11.1.10",
     "@nestjs/platform-express": "^11.1.10",
     "@phishguard/shared": "workspace:*",
+    "@spektrum-ai/sdk": "^0.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.1",

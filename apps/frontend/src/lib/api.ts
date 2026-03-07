@@ -44,6 +44,12 @@ export const api = {
       body: JSON.stringify({ sessionId, decisions }),
     }),
 
+  generateExercise: (analysisResult: AnalysisResult): Promise<{ appUrl: string }> =>
+    request<{ appUrl: string }>('/exercise/generate', {
+      method: 'POST',
+      body: JSON.stringify(analysisResult),
+    }),
+
   streamChat: async function* (sessionId: string, message: string): AsyncGenerator<string> {
     const res = await fetch(`${API_BASE}/chat/${sessionId}`, {
       method: 'POST',
