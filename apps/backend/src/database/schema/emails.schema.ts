@@ -17,5 +17,6 @@ export const emails = pgTable('emails', {
   indicators: jsonb('indicators').notNull().default([]),
   difficulty: varchar('difficulty', { length: 10 }).notNull(),
   userMarkedAsPhishing: boolean('user_marked_as_phishing'),
+  phishingSiteUrl: varchar('phishing_site_url', { length: 500 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

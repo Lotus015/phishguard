@@ -2,11 +2,15 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../database/drizzle.provider';
 import * as schema from '../../database/schema';
+import { ExerciseService } from '../exercise/exercise.service';
 import type { AnalysisSubmission, AnalysisResult, EmailVerdict, PhishingIndicator } from '@phishguard/shared';
 
 @Injectable()
 export class AnalysisService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private exerciseService: ExerciseService,
+  ) {}
 
   async submitAnalysis(submission: AnalysisSubmission): Promise<AnalysisResult> {
     const { sessionId, decisions } = submission;
@@ -65,6 +69,11 @@ export class AnalysisService {
       .where(eq(schema.sessions.id, sessionId));
 
     console.log(`[ANALYSIS] Session ${sessionId}: ${score}/${total} correct`);
+
+    // Fire-and-forget: start generating phishing site clones in background
+    this.exerciseService.generatePhishingSitesInBackground(sessionId).catch((err) => {
+      console.error(`[ANALYSIS] Background phishing site generation failed:`, err.message);
+    });
 
     return { sessionId, score, total, perEmail };
   }

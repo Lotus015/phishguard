@@ -1,4 +1,4 @@
-import { ArrowLeft, Star, Archive, Trash2, Mail, MoreVertical, Printer, ExternalLink, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Star, Archive, Trash2, Mail, MoreVertical, Printer, ExternalLink, ShieldAlert, ShieldCheck, Globe, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInbox } from '../context/InboxContext';
 
@@ -29,7 +29,7 @@ function getInitials(name: string): string {
 }
 
 export function EmailViewer(): React.JSX.Element | null {
-  const { selectedEmail, selectEmail, decisions, markEmail, clearDecision, isSubmitted, analysisResult } = useInbox();
+  const { selectedEmail, selectEmail, decisions, markEmail, clearDecision, isSubmitted, analysisResult, phishingSiteUrls } = useInbox();
 
   if (!selectedEmail) return null;
 
@@ -204,6 +204,34 @@ export function EmailViewer(): React.JSX.Element | null {
                   </ul>
                 </div>
               )}
+
+              {/* See The Attack button for phishing emails */}
+              {verdict.wasPhishing && (() => {
+                const siteUrl = phishingSiteUrls[selectedEmail.id];
+                if (siteUrl) {
+                  return (
+                    <a
+                      href={siteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+                    >
+                      <Globe className="h-4 w-4" />
+                      See The Attack — View the phishing site this email links to
+                      <ExternalLink className="ml-auto h-3.5 w-3.5" />
+                    </a>
+                  );
+                }
+                if (siteUrl === null) {
+                  return (
+                    <div className="mt-4 flex items-center gap-2 rounded-lg bg-neutral-50 px-4 py-2.5 text-sm text-neutral-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Building phishing site simulation...
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         )}

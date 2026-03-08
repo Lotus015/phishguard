@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, MessageCircle, X, Trophy, Sparkles, ExternalLink } from 'lucide-react';
+import { Send, MessageCircle, X, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useInbox } from '../inbox/context/InboxContext';
@@ -16,8 +16,6 @@ export function DebriefPanel(): React.JSX.Element | null {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [exerciseUrl, setExerciseUrl] = useState<string | null>(null);
-  const [isGeneratingExercise, setIsGeneratingExercise] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,18 +63,6 @@ export function DebriefPanel(): React.JSX.Element | null {
     }
     setIsStreaming(false);
   }, [sessionId, isStreaming]);
-
-  const handleGenerateExercise = useCallback(async () => {
-    if (!analysisResult || isGeneratingExercise) return;
-    setIsGeneratingExercise(true);
-    try {
-      const result = await api.generateExercise(analysisResult);
-      setExerciseUrl(result.appUrl);
-    } catch (err) {
-      console.error('Failed to generate exercise:', err);
-    }
-    setIsGeneratingExercise(false);
-  }, [analysisResult, isGeneratingExercise]);
 
   if (!isSubmitted || !analysisResult) return null;
 
@@ -137,30 +123,6 @@ export function DebriefPanel(): React.JSX.Element | null {
           </div>
         ))}
         <div ref={messagesEndRef} />
-      </div>
-
-      {/* Exercise button / link */}
-      <div className="border-t border-neutral-200 px-4 py-2">
-        {exerciseUrl ? (
-          <a
-            href={exerciseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open Interactive Exercise
-          </a>
-        ) : (
-          <button
-            onClick={handleGenerateExercise}
-            disabled={isGeneratingExercise}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50"
-          >
-            <Sparkles className="h-4 w-4" />
-            {isGeneratingExercise ? 'Generating Exercise...' : 'Generate Practice Exercise'}
-          </button>
-        )}
       </div>
 
       {/* Input */}

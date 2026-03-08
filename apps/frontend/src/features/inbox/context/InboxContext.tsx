@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { GeneratedEmail, CampaignConfig, AnalysisResult } from '@phishguard/shared';
 import { api } from '@/lib/api';
 
@@ -13,6 +13,7 @@ interface InboxState {
   showWizard: boolean;
   error: string | null;
   analysisResult: AnalysisResult | null;
+  phishingSiteUrls: Record<string, string | null>;
 }
 
 interface InboxContextValue extends InboxState {
@@ -42,7 +43,41 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
     showWizard: false,
     error: null,
     analysisResult: null,
+    phishingSiteUrls: {},
   });
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll for phishing site URLs after submission
+  useEffect(() => {
+    if (!state.isSubmitted || !state.sessionId) return;
+
+    const poll = async () => {
+      try {
+        const urls = await api.getPhishingSiteStatus(state.sessionId!);
+        setState((prev) => ({ ...prev, phishingSiteUrls: urls }));
+
+        // Stop polling when all sites are ready
+        const allReady = Object.values(urls).every((url) => url !== null);
+        if (allReady && pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      } catch {
+        // Silently ignore poll errors
+      }
+    };
+
+    poll(); // Initial check
+    pollRef.current = setInterval(poll, 10_000); // Every 10s
+
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [state.isSubmitted, state.sessionId]);
 
   const selectedEmail = state.emails.find((e) => e.id === state.selectedEmailId) ?? null;
 
@@ -103,6 +138,7 @@ export function InboxProvider({ children }: { children: ReactNode }): React.JSX.
         isGenerating: false,
         showWizard: false,
         analysisResult: null,
+        phishingSiteUrls: {},
       }));
     } catch (err) {
       setState((prev) => ({

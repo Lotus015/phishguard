@@ -1,91 +1,169 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { eq } from 'drizzle-orm';
 import { SpektrumSDK } from '@spektrum-ai/sdk';
-import type { AnalysisResult } from '@phishguard/shared';
+import { DRIZZLE, type DrizzleDB } from '../../database/drizzle.provider';
+import * as schema from '../../database/schema';
+import type { PhishingIndicator } from '@phishguard/shared';
 
 @Injectable()
 export class ExerciseService {
   private readonly spektrum: SpektrumSDK;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @Inject(DRIZZLE) private db: DrizzleDB,
+  ) {
     this.spektrum = new SpektrumSDK({
       apiKey: this.configService.get<string>('spektrum.apiKey'),
       endpoint: this.configService.get<string>('spektrum.endpoint'),
     });
   }
 
-  async generateExercise(analysisResult: AnalysisResult): Promise<{ appUrl: string }> {
-    const { score, total, perEmail } = analysisResult;
-    const percentage = Math.round((score / total) * 100);
+  /**
+   * Fire-and-forget: generate phishing site clones for all phishing emails in a session.
+   * Runs in background after analysis submission.
+   */
+  async generatePhishingSitesInBackground(sessionId: string): Promise<void> {
+    const emailRows = await this.db
+      .select()
+      .from(schema.emails)
+      .where(eq(schema.emails.sessionId, sessionId));
 
-    // Identify weak areas
-    const mistakes = perEmail.filter((v) => !v.correct);
-    const missedIndicators = mistakes
-      .flatMap((v) => v.indicators)
-      .map((ind) => ind.type.replace(/_/g, ' '));
-    const uniqueIndicators = [...new Set(missedIndicators)];
+    const phishingEmails = emailRows.filter((e) => e.isPhishing);
 
-    const title = `Phishing Awareness Exercise — ${percentage}% Score`;
-    const description = this.buildExerciseDescription(percentage, uniqueIndicators, perEmail);
+    if (phishingEmails.length === 0) return;
 
-    console.log(`[EXERCISE] Creating Spektrum project...`);
+    console.log(`[EXERCISE] Starting background generation of ${phishingEmails.length} phishing sites for session ${sessionId}`);
+
+    // Launch all in parallel — don't await the outer promise (fire-and-forget)
+    const promises = phishingEmails.map((email) =>
+      this.generateSinglePhishingSite(email).catch((err) => {
+        console.error(`[EXERCISE] Failed to generate site for email ${email.id}:`, err.message);
+      }),
+    );
+
+    await Promise.allSettled(promises);
+    console.log(`[EXERCISE] All phishing site generation completed for session ${sessionId}`);
+  }
+
+  /**
+   * Get phishing site URLs for a session (for frontend polling).
+   */
+  async getPhishingSiteStatus(sessionId: string): Promise<Record<string, string | null>> {
+    const emailRows = await this.db
+      .select({
+        id: schema.emails.id,
+        isPhishing: schema.emails.isPhishing,
+        phishingSiteUrl: schema.emails.phishingSiteUrl,
+      })
+      .from(schema.emails)
+      .where(eq(schema.emails.sessionId, sessionId));
+
+    const result: Record<string, string | null> = {};
+    for (const email of emailRows) {
+      if (email.isPhishing) {
+        result[email.id] = email.phishingSiteUrl;
+      }
+    }
+    return result;
+  }
+
+  private async generateSinglePhishingSite(email: typeof schema.emails.$inferSelect): Promise<void> {
+    const indicators = email.indicators as PhishingIndicator[];
+    const indicatorList = indicators
+      .map((ind) => `- ${ind.type.replace(/_/g, ' ')}: ${ind.description}`)
+      .join('\n');
+
+    // Determine what kind of phishing site to generate
+    const hasCredentialHarvest = indicators.some((i) =>
+      i.type === 'request_for_credentials' || i.type === 'suspicious_url',
+    );
+    const hasBrandImpersonation = indicators.some((i) => i.type === 'brand_impersonation');
+
+    // Extract brand from email content
+    const brandHints = this.extractBrandHints(email.fromName, email.fromEmail, email.subject);
+
+    const title = `Phishing Site: ${email.subject.slice(0, 50)}`;
+    const description = this.buildPhishingSitePrompt({
+      fromName: email.fromName,
+      fromEmail: email.fromEmail,
+      subject: email.subject,
+      indicators: indicatorList,
+      brandHints,
+      isCredentialHarvest: hasCredentialHarvest,
+      hasBrandImpersonation,
+    });
+
+    console.log(`[EXERCISE] Generating phishing site for "${email.subject.slice(0, 40)}..."...`);
 
     // Create project
-    const project = await this.spektrum.createProject('phishguard');
-    console.log(`[EXERCISE] Project created: ${project.id}`);
+    const projectResponse = await this.spektrum.createProject('phishguard') as any;
+    const projectId = projectResponse.project?.id ?? projectResponse.id;
 
     // Create task
-    const task = await this.spektrum.createTask(project.id, title, description);
-    console.log(`[EXERCISE] Task created: ${task.id}`);
+    const taskResponse = await this.spektrum.createTask(projectId, title, description) as any;
+    const task = taskResponse.task ?? taskResponse;
 
     // Code and deploy
-    console.log(`[EXERCISE] Building and deploying...`);
     await this.spektrum.codeAndDeploy(task);
 
     // Get app URL
-    const appUrl = await this.spektrum.getAppUrl(project.id);
-    console.log(`[EXERCISE] Deployed at: ${appUrl}`);
+    const appUrl = await this.spektrum.getAppUrl(projectId);
+    console.log(`[EXERCISE] Phishing site ready for email ${email.id}: ${appUrl}`);
 
-    return { appUrl };
+    // Save URL to database
+    await this.db
+      .update(schema.emails)
+      .set({ phishingSiteUrl: appUrl })
+      .where(eq(schema.emails.id, email.id));
   }
 
-  private buildExerciseDescription(
-    percentage: number,
-    weakAreas: string[],
-    perEmail: AnalysisResult['perEmail'],
-  ): string {
-    const focusAreas = weakAreas.length > 0
-      ? `Focus on these phishing indicators the user missed: ${weakAreas.join(', ')}.`
-      : 'The user identified all phishing emails correctly. Create an advanced exercise to further sharpen their skills.';
+  private extractBrandHints(fromName: string, fromEmail: string, subject: string): string {
+    const text = `${fromName} ${fromEmail} ${subject}`.toLowerCase();
+    const brands = ['microsoft', 'google', 'apple', 'paypal', 'amazon', 'netflix', 'dropbox', 'linkedin', 'slack', 'zoom', 'docusign'];
+    const found = brands.filter((b) => text.includes(b));
+    if (found.length > 0) return found.join(', ');
 
-    const emailSummaries = perEmail.map((e, i) => {
-      const type = e.wasPhishing ? 'PHISHING' : 'LEGITIMATE';
-      const result = e.correct ? 'correctly identified' : 'missed';
-      const indicators = e.indicators.length > 0
-        ? ` (indicators: ${e.indicators.map((ind) => ind.type.replace(/_/g, ' ')).join(', ')})`
-        : '';
-      return `${i + 1}. ${type} email — ${result}${indicators}`;
-    }).join('\n');
+    // Fallback: use sender name as brand
+    return fromName;
+  }
 
-    return `Create an interactive React phishing awareness training exercise.
+  private buildPhishingSitePrompt(ctx: {
+    fromName: string;
+    fromEmail: string;
+    subject: string;
+    indicators: string;
+    brandHints: string;
+    isCredentialHarvest: boolean;
+    hasBrandImpersonation: boolean;
+  }): string {
+    const pageType = ctx.isCredentialHarvest
+      ? 'a fake login/credential verification page'
+      : 'a fake action page (document signing, payment confirmation, or account verification)';
 
-USER PERFORMANCE:
-- Score: ${percentage}%
-- ${focusAreas}
+    return `Build ${pageType} that a phishing email would link to.
 
-EMAIL RESULTS:
-${emailSummaries}
+CONTEXT:
+- Email from: ${ctx.fromName} <${ctx.fromEmail}>
+- Subject: "${ctx.subject}"
+- Brand to impersonate: ${ctx.brandHints}
+- Phishing indicators found:
+${ctx.indicators}
 
-REQUIREMENTS:
-- Build a single-page interactive React application
-- The exercise should teach the user to recognize phishing indicators they missed
-- Include 3-5 interactive scenarios or quiz questions
-- Each scenario should present an email element (sender, URL, content) and ask the user to identify if it's suspicious
-- Provide immediate feedback with explanations after each answer
-- Show a final score at the end
-- Use a clean, modern UI with good spacing and readable typography
-- Use inline styles (no external CSS frameworks)
-- Colors: blue (#1a73e8) for primary, green for correct, red for incorrect
-- Make it educational and engaging, not just a simple quiz`;
+THE PAGE MUST INCLUDE:
+1. A realistic-looking fake page impersonating "${ctx.brandHints}" — use their color scheme and style
+2. A fake URL bar at the top showing a suspicious URL (e.g. "micros0ft-verify.com" or "secure-login-${ctx.brandHints.split(',')[0].trim().toLowerCase()}.com") — make it look like a browser address bar
+3. A login form or action form appropriate for the attack type
+4. Educational overlay mode: a sticky button "Reveal Red Flags" that when clicked highlights all suspicious elements with red borders and shows tooltip explanations
+
+CRITICAL CONSTRAINTS FOR FAST GENERATION:
+- Single file, single component — NO routing, NO multiple pages
+- ALL styles inline — no CSS imports, no external stylesheets
+- NO external dependencies — no icon libraries, no UI frameworks
+- Keep it SIMPLE: one page, one form, educational toggles
+- Use only basic HTML elements styled with inline React style objects
+- Maximum ~200 lines of JSX
+- The page should look realistic but the code should be minimal`;
   }
 }
