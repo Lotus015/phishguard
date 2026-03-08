@@ -1,4 +1,5 @@
-import { ArrowLeft, Star, Archive, Trash2, Mail, MoreVertical, Printer, ExternalLink, ShieldAlert, ShieldCheck, Globe, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Star, Archive, Trash2, Mail, MoreVertical, Printer, ExternalLink, ShieldAlert, ShieldCheck, Globe, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInbox } from '../context/InboxContext';
 
@@ -32,6 +33,8 @@ export function EmailViewer(): React.JSX.Element | null {
   const { selectedEmail, selectEmail, decisions, markEmail, clearDecision, isSubmitted, analysisResult, phishingSiteUrls } = useInbox();
 
   if (!selectedEmail) return null;
+
+  const [phishingSiteOpen, setPhishingSiteOpen] = useState<string | null>(null);
 
   const decision = decisions[selectedEmail.id];
   const hasDecision = decision !== undefined;
@@ -210,16 +213,14 @@ export function EmailViewer(): React.JSX.Element | null {
                 const siteUrl = phishingSiteUrls[selectedEmail.id];
                 if (siteUrl) {
                   return (
-                    <a
-                      href={siteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+                    <button
+                      onClick={() => setPhishingSiteOpen(siteUrl)}
+                      className="mt-4 flex w-full items-center gap-2 rounded-lg bg-purple-50 px-4 py-2.5 text-left text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
                     >
                       <Globe className="h-4 w-4" />
                       See The Attack — View the phishing site this email links to
                       <ExternalLink className="ml-auto h-3.5 w-3.5" />
-                    </a>
+                    </button>
                   );
                 }
                 if (siteUrl === null) {
@@ -236,6 +237,51 @@ export function EmailViewer(): React.JSX.Element | null {
           </div>
         )}
       </div>
+
+      {/* Phishing site iframe modal */}
+      {phishingSiteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="relative flex h-[90vh] w-[90vw] max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            {/* Modal header */}
+            <div className="flex items-center justify-between bg-red-600 px-5 py-3 text-white">
+              <div className="flex items-center gap-3">
+                <ShieldAlert className="h-5 w-5" />
+                <div>
+                  <p className="text-sm font-semibold">Phishing Site Simulation</p>
+                  <p className="text-xs text-red-200">This is a safe educational recreation — no real data is collected</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPhishingSiteOpen(null)}
+                className="rounded-full p-1.5 transition-colors hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Fake browser chrome */}
+            <div className="flex items-center gap-2 border-b border-neutral-200 bg-neutral-100 px-4 py-2">
+              <div className="flex gap-1.5">
+                <div className="h-3 w-3 rounded-full bg-red-400" />
+                <div className="h-3 w-3 rounded-full bg-amber-400" />
+                <div className="h-3 w-3 rounded-full bg-green-400" />
+              </div>
+              <div className="flex flex-1 items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm text-neutral-500">
+                <Globe className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                <span className="truncate">{phishingSiteOpen}</span>
+              </div>
+            </div>
+
+            {/* Iframe */}
+            <iframe
+              src={phishingSiteOpen}
+              className="flex-1"
+              title="Phishing Site Simulation"
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
