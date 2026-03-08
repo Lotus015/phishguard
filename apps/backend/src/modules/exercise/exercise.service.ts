@@ -36,11 +36,9 @@ export class ExerciseService {
 
     console.log(`[EXERCISE] Starting background generation of ${phishingEmails.length} phishing sites for session ${sessionId}`);
 
-    // Launch all in parallel — don't await the outer promise (fire-and-forget)
+    // Launch all in parallel with retry
     const promises = phishingEmails.map((email) =>
-      this.generateSinglePhishingSite(email).catch((err) => {
-        console.error(`[EXERCISE] Failed to generate site for email ${email.id}:`, err.message);
-      }),
+      this.withRetry(() => this.generateSinglePhishingSite(email), 2, email.id),
     );
 
     await Promise.allSettled(promises);
@@ -117,6 +115,24 @@ export class ExerciseService {
       .update(schema.emails)
       .set({ phishingSiteUrl: appUrl })
       .where(eq(schema.emails.id, email.id));
+  }
+
+  private async withRetry(fn: () => Promise<void>, maxRetries: number, emailId: string): Promise<void> {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await fn();
+        return;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (attempt < maxRetries) {
+          const delay = (attempt + 1) * 15_000; // 15s, 30s
+          console.warn(`[EXERCISE] Attempt ${attempt + 1} failed for email ${emailId}: ${message}. Retrying in ${delay / 1000}s...`);
+          await new Promise((r) => setTimeout(r, delay));
+        } else {
+          console.error(`[EXERCISE] All ${maxRetries + 1} attempts failed for email ${emailId}: ${message}`);
+        }
+      }
+    }
   }
 
   private extractBrandHints(fromName: string, fromEmail: string, subject: string): string {
