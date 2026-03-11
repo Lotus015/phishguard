@@ -77,7 +77,7 @@ export function EmailViewer(): React.JSX.Element | null {
       </div>
 
       {/* Email content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-16">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 md:px-12 lg:px-16">
         {/* Subject */}
         <div className="flex items-start justify-between">
           <h1 className="text-2xl font-normal text-neutral-900">{selectedEmail.subject}</h1>
@@ -96,9 +96,9 @@ export function EmailViewer(): React.JSX.Element | null {
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-x-2">
               <span className="font-medium text-neutral-900">{selectedEmail.from.name}</span>
-              <span className="text-sm text-neutral-500">&lt;{selectedEmail.from.email}&gt;</span>
+              <span className="truncate text-sm text-neutral-500">&lt;{selectedEmail.from.email}&gt;</span>
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-500">
               <span>to me</span>

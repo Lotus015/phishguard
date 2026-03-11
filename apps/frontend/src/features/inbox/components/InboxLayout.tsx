@@ -25,7 +25,7 @@ export function InboxLayout(): React.JSX.Element {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-white">
+    <div className="flex h-screen flex-col overflow-x-hidden bg-white">
       {/* Top header */}
       <Header
         sidebarCollapsed={sidebarCollapsed}

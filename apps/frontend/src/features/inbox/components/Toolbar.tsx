@@ -5,7 +5,7 @@ export function Toolbar(): React.JSX.Element {
   const { decidedCount, emails, allDecided, isSubmitted, isSubmitting, submitAnalysis, analysisResult } = useInbox();
 
   return (
-    <div className="flex items-center justify-between px-2 py-1">
+    <div className="flex items-center justify-between overflow-hidden px-2 py-1">
       {/* Left: checkbox + actions */}
       <div className="flex items-center gap-0.5">
         <button className="rounded p-2 text-neutral-600 hover:bg-neutral-100">

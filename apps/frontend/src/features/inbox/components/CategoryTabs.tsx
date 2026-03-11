@@ -25,7 +25,7 @@ export function CategoryTabs(): React.JSX.Element {
           <button
             key={tab.label}
             className={cn(
-              'group relative flex min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap px-3 py-2.5 text-sm transition-colors md:min-w-[160px] md:px-4',
+              'group relative flex min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap px-2 py-2.5 text-sm transition-colors md:px-4',
               isActive
                 ? 'text-[#1a73e8]'
                 : 'text-neutral-600 hover:bg-neutral-50',
@@ -36,7 +36,7 @@ export function CategoryTabs(): React.JSX.Element {
             <div className="flex items-center gap-2">
               <span className={cn('font-medium', isActive && 'font-bold')}>{tab.label}</span>
               {tab.badge && (
-                <span className={cn('rounded-full px-1.5 py-0.5 text-xs font-medium text-white', tab.badgeColor)}>
+                <span className={cn('hidden rounded-full px-1.5 py-0.5 text-xs font-medium text-white md:inline', tab.badgeColor)}>
                   {tab.badge} new
                 </span>
               )}
