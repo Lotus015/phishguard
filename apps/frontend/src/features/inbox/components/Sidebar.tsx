@@ -22,9 +22,11 @@ const mainItems = [
 
 interface SidebarProps {
   collapsed: boolean;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ collapsed }: SidebarProps): React.JSX.Element {
+export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps): React.JSX.Element {
   const { emails } = useInbox();
 
   const counts = {
@@ -34,7 +36,7 @@ export function Sidebar({ collapsed }: SidebarProps): React.JSX.Element {
 
   if (collapsed) {
     return (
-      <aside className="flex w-[72px] flex-col items-center pt-2">
+      <aside className="hidden w-[72px] flex-col items-center pt-2 md:flex">
         {/* Compose button - icon only */}
         <button className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#c2e7ff] shadow-sm transition-shadow hover:shadow-md">
           <Plus className="h-6 w-6 text-neutral-700" />
@@ -60,7 +62,7 @@ export function Sidebar({ collapsed }: SidebarProps): React.JSX.Element {
     );
   }
 
-  return (
+  const sidebarContent = (
     <aside className="flex w-[256px] flex-col pt-2">
       {/* Compose button */}
       <div className="px-4 pb-4">
@@ -126,5 +128,27 @@ export function Sidebar({ collapsed }: SidebarProps): React.JSX.Element {
         </div>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop: inline sidebar */}
+      <div className="hidden md:block">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile: overlay sidebar */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 flex md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={onMobileClose}
+          />
+          <div className="relative z-50 bg-white shadow-xl">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

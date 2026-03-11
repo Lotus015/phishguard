@@ -37,7 +37,7 @@ export function Toolbar(): React.JSX.Element {
 
       {/* Right: pagination */}
       <div className="flex items-center gap-1 text-xs text-neutral-600">
-        <span>1–{emails.length} of {emails.length}</span>
+        <span className="hidden md:inline">1–{emails.length} of {emails.length}</span>
         <button className="rounded-full p-1.5 text-neutral-400 hover:bg-neutral-100" disabled>
           <ChevronLeft className="h-5 w-5" />
         </button>

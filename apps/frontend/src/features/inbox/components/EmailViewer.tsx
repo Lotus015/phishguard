@@ -65,10 +65,10 @@ export function EmailViewer(): React.JSX.Element | null {
 
         <div className="flex-1" />
 
-        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Print">
+        <button className="hidden rounded-full p-2 text-neutral-600 hover:bg-neutral-100 md:inline-flex" title="Print">
           <Printer className="h-5 w-5" />
         </button>
-        <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="Open in new window">
+        <button className="hidden rounded-full p-2 text-neutral-600 hover:bg-neutral-100 md:inline-flex" title="Open in new window">
           <ExternalLink className="h-5 w-5" />
         </button>
         <button className="rounded-full p-2 text-neutral-600 hover:bg-neutral-100" title="More">
@@ -77,7 +77,7 @@ export function EmailViewer(): React.JSX.Element | null {
       </div>
 
       {/* Email content */}
-      <div className="flex-1 overflow-y-auto px-16 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-16">
         {/* Subject */}
         <div className="flex items-start justify-between">
           <h1 className="text-2xl font-normal text-neutral-900">{selectedEmail.subject}</h1>
@@ -120,7 +120,7 @@ export function EmailViewer(): React.JSX.Element | null {
         </div>
 
         {/* Email body */}
-        <div className="mt-6 pl-[52px]">
+        <div className="mt-6 pl-0 md:pl-[52px]">
           <div
             className="text-sm leading-relaxed text-neutral-800"
             dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
@@ -129,7 +129,7 @@ export function EmailViewer(): React.JSX.Element | null {
 
         {/* PhishGuard action buttons */}
         {!isSubmitted && (
-          <div className="mt-8 flex items-center gap-3 border-t border-border pl-[52px] pt-6">
+          <div className="mt-8 flex flex-col items-stretch gap-3 border-t border-border pl-0 pt-6 md:flex-row md:items-center md:pl-[52px]">
             <button
               onClick={() =>
                 hasDecision && decision === true
@@ -169,7 +169,7 @@ export function EmailViewer(): React.JSX.Element | null {
         {/* Verdict panel (after submission) */}
         {verdict && (
           <div className={cn(
-            'mt-8 rounded-lg border pl-[52px] pt-0',
+            'mt-8 rounded-lg border pl-0 pt-0 md:pl-[52px]',
           )}>
             <div className={cn(
               'rounded-lg p-4',

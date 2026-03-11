@@ -40,14 +40,14 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
     <div
       onClick={() => selectEmail(email.id)}
       className={cn(
-        'group flex h-10 cursor-pointer items-center border-b border-neutral-100 pl-2 pr-4 text-sm transition-colors',
+        'group flex h-14 cursor-pointer items-center border-b border-neutral-100 pl-2 pr-4 text-sm transition-colors md:h-10',
         isUnread ? 'bg-white font-medium' : 'bg-[#f2f6fc]/50',
         'hover:shadow-[inset_1px_0_0_#dadce0,inset_-1px_0_0_#dadce0,0_1px_2px_0_rgba(60,64,67,.3),0_1px_3px_1px_rgba(60,64,67,.15)]',
         'hover:z-10 hover:relative',
       )}
     >
-      {/* Checkbox */}
-      <div className="flex w-10 shrink-0 items-center justify-center">
+      {/* Checkbox — hidden on mobile */}
+      <div className="hidden w-10 shrink-0 items-center justify-center md:flex">
         <input
           type="checkbox"
           className="h-[18px] w-[18px] cursor-pointer rounded border-neutral-300 text-neutral-600"
@@ -84,7 +84,7 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
 
       {/* Sender */}
       <div className={cn(
-        'w-[200px] shrink-0 truncate pr-4',
+        'max-w-[120px] shrink-0 truncate pr-4 md:w-[200px] md:max-w-[200px]',
         isUnread ? 'font-bold text-neutral-900' : 'text-neutral-700',
       )}>
         {email.from.name}
@@ -103,8 +103,8 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
         </span>
       </div>
 
-      {/* Hover actions (shown on hover, hide time) */}
-      <div className="ml-2 hidden shrink-0 items-center gap-0.5 group-hover:flex">
+      {/* Hover actions (shown on hover, hidden on mobile) */}
+      <div className="ml-2 hidden shrink-0 items-center gap-0.5 md:group-hover:flex">
         <button
           className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-200"
           onClick={(e) => e.stopPropagation()}
@@ -135,9 +135,9 @@ export function EmailRow({ email }: EmailRowProps): React.JSX.Element {
         </button>
       </div>
 
-      {/* Time (hidden on hover) */}
+      {/* Time (hidden on hover on desktop) */}
       <div className={cn(
-        'ml-2 w-[52px] shrink-0 text-right text-xs group-hover:hidden',
+        'ml-2 w-[52px] shrink-0 text-right text-xs md:group-hover:hidden',
         isUnread ? 'font-bold text-neutral-900' : 'text-neutral-500',
       )}>
         {formatTime(email.receivedAt)}

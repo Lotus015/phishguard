@@ -7,7 +7,7 @@ export function GenerateButton(): React.JSX.Element {
   return (
     <button
       onClick={openWizard}
-      className="fixed bottom-8 right-8 flex items-center gap-3 rounded-2xl bg-[#c2e7ff] px-6 py-3.5 text-sm font-medium text-neutral-700 shadow-lg transition-all hover:shadow-xl"
+      className="fixed bottom-4 right-4 flex items-center gap-3 rounded-2xl bg-[#c2e7ff] px-4 py-3 text-sm font-medium text-neutral-700 shadow-lg transition-all hover:shadow-xl md:bottom-8 md:right-8 md:px-6 md:py-3.5"
     >
       <Plus className="h-5 w-5" />
       Generate Campaign

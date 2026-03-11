@@ -74,7 +74,7 @@ export function DebriefPanel(): React.JSX.Element | null {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-8 right-8 flex items-center gap-3 rounded-2xl bg-[#1a73e8] px-6 py-3.5 text-sm font-medium text-white shadow-lg transition-all hover:bg-[#1557b0] hover:shadow-xl"
+        className="fixed bottom-4 right-4 flex items-center gap-3 rounded-2xl bg-[#1a73e8] px-4 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-[#1557b0] hover:shadow-xl md:bottom-8 md:right-8 md:px-6 md:py-3.5"
       >
         <MessageCircle className="h-5 w-5" />
         Debrief Chat
@@ -83,7 +83,7 @@ export function DebriefPanel(): React.JSX.Element | null {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 flex h-[560px] w-[420px] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-white shadow-2xl md:inset-auto md:bottom-4 md:right-4 md:h-[560px] md:w-[420px] md:rounded-2xl md:border md:border-neutral-200">
       {/* Header */}
       <div className="flex items-center justify-between bg-[#1a73e8] px-4 py-3 text-white">
         <div className="flex items-center gap-2">

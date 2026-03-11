@@ -25,8 +25,8 @@ export function Header({ onToggleSidebar }: HeaderProps): React.JSX.Element {
         </svg>
       </div>
 
-      {/* Center: search bar */}
-      <div className="mx-4 flex w-full max-w-[720px]">
+      {/* Center: search bar — hidden on mobile */}
+      <div className="mx-4 hidden w-full max-w-[720px] md:flex">
         <div className="flex w-full items-center rounded-full bg-[#eaf1fb] px-4 py-2.5 transition-colors focus-within:bg-white focus-within:shadow-md">
           <Search className="mr-3 h-5 w-5 text-neutral-500" />
           <input
@@ -42,18 +42,23 @@ export function Header({ onToggleSidebar }: HeaderProps): React.JSX.Element {
         </div>
       </div>
 
+      {/* Mobile: search icon only */}
+      <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 md:hidden">
+        <Search className="h-5 w-5" />
+      </button>
+
       {/* Spacer pushes icons to the right */}
       <div className="flex-1" />
 
       {/* Right: action icons + profile */}
       <div className="flex shrink-0 items-center gap-1">
-        <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100">
+        <button className="hidden rounded-full p-2 text-neutral-500 hover:bg-neutral-100 md:inline-flex">
           <HelpCircle className="h-5 w-5" />
         </button>
-        <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100">
+        <button className="hidden rounded-full p-2 text-neutral-500 hover:bg-neutral-100 md:inline-flex">
           <Settings className="h-5 w-5" />
         </button>
-        <button className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100">
+        <button className="hidden rounded-full p-2 text-neutral-500 hover:bg-neutral-100 md:inline-flex">
           <LayoutGrid className="h-5 w-5" />
         </button>
         <button className={cn(
